@@ -6,6 +6,8 @@
 
 ![img1.png](docs/img1.png "")
 
+[Download ShellCat](https://github.com/restran/shellcat/releases "")
+
 ## TODO
 
 发送命令给所有的 shell
