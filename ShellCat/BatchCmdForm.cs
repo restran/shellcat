@@ -34,6 +34,8 @@ namespace ShellCat
 
             rtbInput.Font = new Font(rtbInput.Font.FontFamily, 10.5f);
             rtbOutput.Font = new Font(rtbOutput.Font.FontFamily, 10.5f);
+            rtbInput.SelectionFont = new Font(rtbInput.Font.FontFamily, 10.5f);
+            rtbOutput.SelectionFont = new Font(rtbInput.Font.FontFamily, 10.5f);
 
             rtbInput.AppendText("You are using bath cmd mode, all your shell cmd will send to all selected servers.");
             rtbInput.AppendText("\n$ ");
@@ -105,6 +107,8 @@ namespace ShellCat
             {
                 var rtbSet = new DelegateRichTextBox(delegate (RichTextBox tb, string cnt)
                 {
+                    // 设置插入点的字体
+                    tb.SelectionFont = new Font(tb.Font.FontFamily, 10.5f);
                     tb.AppendText(cnt);
                     tb.ScrollToCaret(); //让滚动条拉到最底处   
                 });
@@ -112,6 +116,8 @@ namespace ShellCat
             }
             else
             {
+                // 设置插入点的字体
+                rtbOutput.SelectionFont = new Font(rtbOutput.Font.FontFamily, 10.5f);
                 rtbOutput.AppendText(content);
                 rtbOutput.ScrollToCaret(); //让滚动条拉到最底处  
             }
@@ -149,7 +155,7 @@ namespace ShellCat
                     if (lvwIP.Items[i].Checked)
                     {
                         var remote = lvwIP.Items[i].SubItems[1].Text;
-                        _mainForm._server.SendMessageToClient(remote, cmd + "\n");
+                        _mainForm._server.SendMessageToClient(remote, cmd);
                     }
                 }
 

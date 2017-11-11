@@ -21,9 +21,18 @@ namespace ShellCat
                 BackColor = Color.Black,
                 ForeColor = Color.LimeGreen,
             };
-            RtbShell.Font = new Font(RtbShell.Font.FontFamily, 10.5f);
+            try
+            {
+                RtbShell.Font = new Font("Consolas", 10.5f);
+            } 
+            catch
+            {
+
+            }
+            
+            RtbShell.SelectionFont = new Font(RtbShell.Font.FontFamily, 10.5f);
             this.Controls.Add(RtbShell);
-            RtbShell.KeyDown += new System.Windows.Forms.KeyEventHandler(this.RtbShell_KeyDown);
+            RtbShell.KeyUp += new System.Windows.Forms.KeyEventHandler(this.RtbShell_KeyUp);
             //RtbShell.KeyUp += new System.Windows.Forms.KeyEventHandler(this.RtbShell_KeyUp);
             RtbShell.TextChanged += new System.EventHandler(this.RtbShell_TextChanged);
         }
@@ -36,6 +45,8 @@ namespace ShellCat
             {
                 var rtbSet = new DelegateRichTextBox(delegate(RichTextBox tb, string cnt)
                 {
+                    // 设置插入点的字体
+                    tb.SelectionFont = new Font(tb.Font.FontFamily, 10.5f);
                     tb.AppendText(cnt);
                     tb.ScrollToCaret(); //让滚动条拉到最底处   
                     _oldLength = tb.TextLength; // 获取richtextbox中已有内容长度
@@ -44,6 +55,8 @@ namespace ShellCat
             }
             else
             {
+                // 设置插入点的字体
+                RtbShell.SelectionFont = new Font(RtbShell.Font.FontFamily, 10.5f);
                 RtbShell.AppendText(content);
                 RtbShell.ScrollToCaret(); //让滚动条拉到最底处  
                 _oldLength = RtbShell.TextLength; // 获取richtextbox中已有内容长度 
@@ -65,7 +78,7 @@ namespace ShellCat
             }
         }
 
-        private void RtbShell_KeyDown(object sender, KeyEventArgs e)
+        private void RtbShell_KeyUp(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -73,7 +86,7 @@ namespace ShellCat
                 {
                     var cmd = RtbShell.Text.Substring(_oldLength);
                     _oldLength = RtbShell.TextLength;
-                    _client.SendMessage(cmd + "\n");
+                    _client.SendMessage(cmd);
                 }
             }
         }

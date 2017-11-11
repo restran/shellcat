@@ -281,10 +281,10 @@ namespace ShellCat
 
                 lock (_mainForm._lockObject)
                 {
-                    if (_mainForm._showingBatchCmdForm)
+                    if (_mainForm._showingBatchCmdForm && !_mainForm._batchCmdForm.IsDisposed)
                     {
                         _mainForm._batchCmdForm.AppendOutputText("......................\n");
-                        _mainForm._batchCmdForm.AppendOutputText($"{_remoteEndPoint}: \n");
+                        _mainForm._batchCmdForm.AppendOutputText($"{_remoteEndPoint}\n");
                         _mainForm._batchCmdForm.AppendOutputText(msg);
                         _mainForm._batchCmdForm.AppendOutputText("\n");
                     }
