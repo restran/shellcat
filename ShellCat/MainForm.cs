@@ -12,7 +12,10 @@ namespace ShellCat
 {
     public partial class MainForm : Form
     {
-        private readonly Server _server;
+        public readonly Server _server;
+        public BatchCmdForm _batchCmdForm;
+        public Object _lockObject = new object();
+        public bool _showingBatchCmdForm = false;
         private Thread _threadService;
         public List<TabPage> CachedTabList = new List<TabPage>();
 
@@ -20,7 +23,7 @@ namespace ShellCat
         {
             lock (CachedTabList)
             {
-                var found = CachedTabList.Any(tabPage => tp.Text == tabPage.Text);
+                var found = CachedTabList.Any(tabPage => tp.Text.Equals(tabPage.Text));
 
                 if (found == false)
                 {
@@ -35,7 +38,7 @@ namespace ShellCat
             {
                 for (var i = 0; i < CachedTabList.Count; i++)
                 {
-                    if (CachedTabList[i].Text == ip)
+                    if (CachedTabList[i].Text.Equals(ip))
                     {
                         CachedTabList.RemoveAt(i);
                         break;
@@ -101,6 +104,10 @@ namespace ShellCat
                     this._threadService.Abort();
                     this._threadService.Join(500);
                     this._server.StopServer();
+                    if (this._batchCmdForm != null)
+                    {
+                        
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -161,9 +168,10 @@ namespace ShellCat
         {
             for (var i = 0; i < tabControl.TabPages.Count; i++)
             {
-                if (tabControl.TabPages[i].Text == tabControl.SelectedTab.Text)
+                if (tabControl.TabPages[i].Text.Equals(tabControl.SelectedTab.Text))
                 {
                     tabControl.TabPages.RemoveAt(i);
+                    break;
                 }
             }
         }
@@ -173,7 +181,7 @@ namespace ShellCat
             var found = false;
             for (var i = 0; i < tabControl.TabPages.Count; i++)
             {
-                if (ip == tabControl.TabPages[i].Text)
+                if (ip.Equals(tabControl.TabPages[i].Text))
                 {
                     tabControl.SelectedIndex = i;
                     found = true;
@@ -186,7 +194,7 @@ namespace ShellCat
                 {
                     foreach (var t in CachedTabList)
                     {
-                        if (ip == t.Text)
+                        if (ip.Equals(t.Text))
                         {
                             tabControl.TabPages.Add(t);
                             tabControl.SelectedIndex = tabControl.TabCount - 1;
@@ -195,11 +203,70 @@ namespace ShellCat
                 }
             }
         }
+
         private void lvwIP_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             var item = ((ListView) sender).SelectedItems[0];
             string ip = item.Text;
             ShowShellTab(ip);
+        }
+
+        private void closeConnectionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (lvwIP.SelectedItems.Count <= 0)
+            {
+                return;
+            }
+
+            var selectedItem = lvwIP.SelectedItems[0];
+            this._server.RemoveClient(selectedItem.Text);
+   
+            for (var i = 0; i < tabControl.TabPages.Count; i++)
+            {
+                if (tabControl.TabPages[i].Text.Equals(selectedItem.Text))
+                {
+                    tabControl.TabPages.RemoveAt(i);
+                    break;
+                }
+            }
+
+            Console.WriteLine(selectedItem.Text);
+        }
+
+        private void lvwIP_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                if (lvwIP.SelectedItems.Count > 0)
+                {
+                    this.ctxMenuIpList.Show(lvwIP, e.X, e.Y);
+                }
+            }
+        }
+
+        private void btnBatchCmd_Click(object sender, EventArgs e)
+        {
+            if (this._batchCmdForm == null || this._batchCmdForm.IsDisposed)
+            {
+                this._batchCmdForm = new BatchCmdForm(this);
+              
+            }
+            this._batchCmdForm.Show();
+            lock (_lockObject)
+            {
+                this._showingBatchCmdForm = true;
+            }
+        }
+
+        private void tsmiCloseAll_Click(object sender, EventArgs e)
+        {
+            for (int i = tabControl.TabPages.Count - 1; i >= 0; i--)
+            {
+                if (tabControl.TabPages[i].Text != "Server Status")
+                {
+                    tabControl.TabPages.RemoveAt(i);
+                }
+            }
         }
     }
 }

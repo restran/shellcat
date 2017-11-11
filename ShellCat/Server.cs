@@ -18,7 +18,7 @@ namespace ShellCat
 
     public class Server
     {
-        private readonly List<RemoteClient> _clientList = new List<RemoteClient>();
+        public List<RemoteClient> ClientList = new List<RemoteClient>();
         public int ListenPort;
         private readonly MainForm _mainForm;
         private TcpListener _listener;
@@ -36,9 +36,51 @@ namespace ShellCat
 
         public void RemoveClient(RemoteClient client)
         {
-            lock (_clientList)
+            lock (ClientList)
             {
-                _clientList.Remove(client);
+                client.StopConnection();
+                ClientList.Remove(client);
+            }
+        }
+
+        public void RemoveClient(string removeEndpoint)
+        {
+            lock (ClientList)
+            {
+                for (var i = 0; i < ClientList.Count; i++)
+                {
+                    var item = ClientList[i];
+                    if (item._remoteEndPoint.Equals(removeEndpoint))
+                    {
+                        RemoveClient(item);
+                        break;
+                    }
+                }
+            }
+        }
+
+        public void SendMessageToAllClient(string cmd)
+        {
+            lock (ClientList)
+            {
+                foreach (var item in ClientList)
+                {
+                    item.SendMessage(cmd);
+                }
+            }
+        }
+
+        public void SendMessageToClient(string remoteEndpoint, string cmd)
+        {
+            lock (ClientList)
+            {
+                foreach (var item in ClientList)
+                {
+                    if (item._remoteEndPoint.Equals(remoteEndpoint))
+                    {
+                        item.SendMessage(cmd);
+                    }
+                }
             }
         }
 
@@ -63,17 +105,50 @@ namespace ShellCat
             {
                 // 获取一个连接，同步方法，在此处中断
                 var client = _listener.AcceptTcpClient();
-                var remoteClient = new RemoteClient(client, _mainForm, this);
-                _clientList.Add(remoteClient);
-                remoteClient.BeginRead();
+                // 如果勾选，一个IP只保留一个，则自动判断
+                var sameIpExists = false;
+                if (_mainForm.ckbKeepOne.Checked)
+                {
+                    lock (ClientList)
+                    {                 
+                        foreach (var item in ClientList)
+                        {
+                            var remoteIp = client.Client.RemoteEndPoint.ToString().Split(':')[0];
+                            var itemIp = item._remoteEndPoint.Split(':')[0];
+                            if (itemIp.Equals(remoteIp))
+                            {
+                                WriteLog($"This IP has exists! Skip this connection. {client.Client.RemoteEndPoint}");
+                                sameIpExists = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!sameIpExists)
+                {
+                    var remoteClient = new RemoteClient(client, _mainForm, this);
+                    ClientList.Add(remoteClient);
+                    remoteClient.BeginRead();
+                }
+                else
+                {
+                    // 断开连接
+                    try
+                    {
+                        client?.Close();
+                    }
+                    catch (Exception e)
+                    {
+
+                    }
+                }
             }
         }
-
 
         public void StopServer()
         {
             _listener.Stop();
-            foreach (var client in _clientList)
+            foreach (var client in ClientList)
             {
                 client.Dispose();
             }
@@ -93,7 +168,7 @@ namespace ShellCat
         private readonly TcpClient _client;
         private ClientInfo _clientInfo;
         private readonly ShellTab _shellTab;
-        private readonly string _remoteEndPoint;
+        public readonly string _remoteEndPoint;
         private readonly Server _server;
 
         #region RemoteClient
@@ -149,15 +224,35 @@ namespace ShellCat
 
         #endregion
 
+        public void StopConnection()
+        {
+            Dispose();
+            WriteLog($"Stop connection {_remoteEndPoint}");
+        }
+
         private void OnLostConnection()
         {
-            _server.RemoveClient(this);
-            Dispose();
-            _shellTab.AppendText("\r\n++++++++CONNECTION LOST++++++++\r\n");
-            WriteLog($"Remote {_remoteEndPoint} lost connection");
-            _shellTab.ConnectionLost = true;
-            Utils.RemoveIpListView(_mainForm.ListViewIp, _remoteEndPoint);
-            _mainForm.RemoveCachedTab(_remoteEndPoint);
+            try
+            {
+                _server.RemoveClient(this);
+                Dispose();
+                _shellTab.AppendText("\r\n++++++++CONNECTION LOST++++++++\r\n");
+                WriteLog($"Remote {_remoteEndPoint} lost connection");
+                _shellTab.ConnectionLost = true;
+                Utils.RemoveIpListView(_mainForm.ListViewIp, _remoteEndPoint);
+                lock (_mainForm._lockObject)
+                {
+                    if (_mainForm._showingBatchCmdForm && _mainForm._batchCmdForm != null)
+                    {
+                        Utils.RemoveIpListView(_mainForm._batchCmdForm.lvwIP, _remoteEndPoint, 1);
+                    }
+                }
+                _mainForm.RemoveCachedTab(_remoteEndPoint);
+            }
+            catch (Exception e)
+            {
+                WriteLog(e.Message);
+            }
         }
 
         #region OnReadComplete
@@ -183,6 +278,17 @@ namespace ShellCat
                 WriteLog(msg);
                 _shellTab.AppendText(msg);
 
+                lock (_mainForm._lockObject)
+                {
+                    if (_mainForm._showingBatchCmdForm)
+                    {
+                        _mainForm._batchCmdForm.AppendOutputText("......................\n");
+                        _mainForm._batchCmdForm.AppendOutputText($"{_remoteEndPoint}: \n");
+                        _mainForm._batchCmdForm.AppendOutputText(msg);
+                        _mainForm._batchCmdForm.AppendOutputText("\n");
+                    }
+                }
+
                 Array.Clear(_buffer, 0, _buffer.Length); // 清空缓存，避免脏读
 
                 // 再次调用BeginRead()，完成时调用自身，形成无限循环
@@ -205,17 +311,17 @@ namespace ShellCat
         // 发送消息到客户端
         public void SendMessage(string msg)
         {
-            if (!_client.Connected)
-            {
-                _shellTab.ConnectionLost = true;
-                return;
-            }
-
-            var stream = _clientInfo.Stream;
-            WriteLog($"Sent To {_remoteEndPoint}");
-            var temp = Encoding.UTF8.GetBytes(msg); // 获得缓存
             try
             {
+                if (!_client.Connected)
+                {
+                    _shellTab.ConnectionLost = true;
+                    return;
+                }
+
+                var stream = _clientInfo.Stream;
+                WriteLog($"Sent To {_remoteEndPoint}");
+                var temp = Encoding.UTF8.GetBytes(msg); // 获得缓存
                 lock (stream)
                 {
                     stream.Write(temp, 0, temp.Length); // 发往客户端

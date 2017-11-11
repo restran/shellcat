@@ -47,18 +47,18 @@ namespace ShellCat
             }
         }
 
-        public static void RemoveIpListView(ListView lvw, string ip)
+        public static void RemoveIpListView(ListView lvw, string ip, int textIndex=0)
         {
             // 对于该控件的请求来自于创建该控件所在线程以外的线程
             if (lvw.InvokeRequired)
             {
                 var lvwSet = new DelegateIpListView(delegate(ListView _lvw, string _ip)
                 {
-                    var remote = new ListViewItem(_ip);
-                    remote.SubItems.Add(DateTime.Now.ToShortTimeString());
+                    //var remote = new ListViewItem(_ip);
+                    //remote.SubItems.Add(DateTime.Now.ToShortTimeString());
                     for (var i = 0; i < _lvw.Items.Count; i++)
                     {
-                        if (_lvw.Items[i].Text.Equals(ip))
+                        if (_lvw.Items[i].SubItems[textIndex].Text.Equals(ip))
                         {
                             _lvw.Items.RemoveAt(i);
                             break;
@@ -70,11 +70,11 @@ namespace ShellCat
             }
             else
             {
-                var remote = new ListViewItem(ip);
-                remote.SubItems.Add(DateTime.Now.ToShortTimeString());
+                //var remote = new ListViewItem(ip);
+                //remote.SubItems.Add(DateTime.Now.ToShortTimeString());
                 for (var i = 0; i < lvw.Items.Count; i++)
                 {
-                    if (lvw.Items[i].Text.Equals(ip))
+                    if (lvw.Items[i].SubItems[textIndex].Equals(ip))
                     {
                         lvw.Items.RemoveAt(i);
                         break;
@@ -101,7 +101,11 @@ namespace ShellCat
                     tp.Controls.Add(tab);
   
                     mainForm.AddCachedTab(tp);
-                    mainForm.ShowShellTab(_ip);
+                    // 超过5个就不自动弹出来了
+                    if (mainForm.CachedTabList.Count <= 3)
+                    {
+                        mainForm.ShowShellTab(_ip);
+                    }
                 });
                 tabControl.Invoke(control, tabControl, client, ip);
             }
@@ -119,6 +123,7 @@ namespace ShellCat
 
             return tab;
         }
+
 
         //public static void RemoveShellTab(TabControl tabControl, RemoteClient client, string ip)
         //{
