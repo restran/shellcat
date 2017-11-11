@@ -20,6 +20,17 @@ namespace ShellCat
                 }
             }
 
+            public ShellTab AddShellTab()
+            {
+                shellTab = new ShellTab(this.client)
+                {
+                    Dock = DockStyle.Fill
+                };
+
+                shellTab.AppendText(text);
+                return shellTab;
+            }
+
             public void AppendText (string t)
             {
                 this.text += t;
@@ -108,78 +119,6 @@ namespace ShellCat
                 lvw.Columns[0].Text = $"IP ({lvw.Items.Count})";
             }
         }
-
-        //public static ShellTab AddShellTab(MainForm mainForm, RemoteClient client, string ip)
-        //{
-        //    ShellTab tab = null;
-        //    var tabControl = mainForm.TabControlShell;
-        //    // 对于该控件的请求来自于创建该控件所在线程以外的线程
-        //    if (tabControl.InvokeRequired)
-        //    {
-        //        var control = new DelegateTabControl(delegate (TabControl _tb, RemoteClient _client, string _ip)
-        //        {
-        //            tab = new ShellTab(_client)
-        //            {
-        //                Dock = DockStyle.Fill
-        //            };
-        //            var tp = new TabPage {Text = _ip};
-        //            tp.Controls.Add(tab);
-
-        //            mainForm.AddCachedTab(tp);
-        //            // 超过一定数量就不自动弹出来了
-        //            if (mainForm.cachedTabList.Count <= 1)
-        //            {
-        //                mainForm.ShowShellTab(_ip);
-        //            }
-        //        });
-        //        tabControl.Invoke(control, tabControl, client, ip);
-        //    }
-        //    else
-        //    {
-        //        var tp = new TabPage { Dock = DockStyle.Fill };
-        //        tab = new ShellTab(client)
-        //        {
-        //            Dock = DockStyle.Fill
-        //        };
-        //        tp.Controls.Add(tab);
-        //        tp.Text = ip;
-        //        tabControl.TabPages.Add(tp);
-        //    }
-
-        //    return tab;
-        //}
-
-
-        //public static void RemoveShellTab(TabControl tabControl, RemoteClient client, string ip)
-        //{
-        //    // 对于该控件的请求来自于创建该控件所在线程以外的线程
-        //    if (tabControl.InvokeRequired)
-        //    {
-        //        var control = new DelegateTabControl(delegate (TabControl _tb, RemoteClient _client, string _ip)
-        //        {
-        //            for (var i = 0; i < _tb.TabPages.Count; i++)
-        //            {
-        //                if (_tb.TabPages[i].Text.Equals(ip))
-        //                {
-        //                    _tb.TabPages.RemoveAt(i);
-        //                    break;
-        //                }
-        //            }
-        //        });
-        //        tabControl.Invoke(control, tabControl, client, ip);
-        //    }
-        //    else
-        //    {
-        //        for (var i = 0; i < tabControl.TabPages.Count; i++)
-        //        {
-        //            if (tabControl.TabPages[i].Text.Equals(ip))
-        //            {
-        //                tabControl.TabPages.RemoveAt(i);
-        //                break;
-        //            }
-        //        }
-        //    }
-        //}
 
         private delegate void DelegateRichTextBox(RichTextBox textBox, string content);
 

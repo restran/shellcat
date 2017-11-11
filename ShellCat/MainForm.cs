@@ -204,14 +204,10 @@ namespace ShellCat
                 var control = new DelegateTabControl(delegate (TabControl _tb, TabTextItem _tab)
                 {
                     var tp = new TabPage { Dock = DockStyle.Fill };
-                    var tab = new ShellTab(tabText.client)
-                    {
-                        Dock = DockStyle.Fill
-                    };
+                    var tab = _tab.AddShellTab();
+
                     tp.Controls.Add(tab);
-                    tp.Text = tabText.title;
-                    tab.AppendText(tabText.text);
-                    tabText.shellTab = tab;
+                    tp.Text = _tab.title;
                     tabControl.TabPages.Add(tp);
                     tabControl.SelectedIndex = tabControl.TabCount - 1;
                 });
@@ -220,18 +216,15 @@ namespace ShellCat
             else
             {
                 var tp = new TabPage { Dock = DockStyle.Fill };
-                var tab = new ShellTab(tabText.client)
-                {
-                    Dock = DockStyle.Fill
-                };
+                var tab = tabText.AddShellTab();
+
                 tp.Controls.Add(tab);
                 tp.Text = tabText.title;
-                tab.AppendText(tabText.text);
-                tabText.shellTab = tab;
                 tabControl.TabPages.Add(tp);
                 tabControl.SelectedIndex = tabControl.TabCount - 1;
             }
         }
+
         public void ShowShellTab(string ip)
         {
             var found = false;
