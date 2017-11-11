@@ -5,6 +5,31 @@ namespace ShellCat
 {
     public class Utils
     {
+        public class TabTextItem
+        {
+            public string title = "";
+            public string text = "";
+            public RemoteClient client;
+            public ShellTab shellTab;
+
+            public void ConnectionLost()
+            {
+                if (shellTab != null && !shellTab.IsDisposed)
+                {
+                    shellTab.ConnectionLost = true;
+                }
+            }
+
+            public void AppendText (string t)
+            {
+                this.text += t;
+                if (shellTab != null && !shellTab.IsDisposed)
+                {
+                    shellTab.AppendText(t);
+                }
+            }
+        }
+
         public static void WriteServerLog(RichTextBox textBox, string content)
         {
             // 对于该控件的请求来自于创建该控件所在线程以外的线程
@@ -84,45 +109,45 @@ namespace ShellCat
             }
         }
 
-        public static ShellTab AddShellTab(MainForm mainForm, RemoteClient client, string ip)
-        {
-            ShellTab tab = null;
-            var tabControl = mainForm.TabControlShell;
-            // 对于该控件的请求来自于创建该控件所在线程以外的线程
-            if (tabControl.InvokeRequired)
-            {
-                var control = new DelegateTabControl(delegate (TabControl _tb, RemoteClient _client, string _ip)
-                {
-                    tab = new ShellTab(_client)
-                    {
-                        Dock = DockStyle.Fill
-                    };
-                    var tp = new TabPage {Text = _ip};
-                    tp.Controls.Add(tab);
-  
-                    mainForm.AddCachedTab(tp);
-                    // 超过5个就不自动弹出来了
-                    if (mainForm.CachedTabList.Count <= 3)
-                    {
-                        mainForm.ShowShellTab(_ip);
-                    }
-                });
-                tabControl.Invoke(control, tabControl, client, ip);
-            }
-            else
-            {
-                var tp = new TabPage { Dock = DockStyle.Fill };
-                tab = new ShellTab(client)
-                {
-                    Dock = DockStyle.Fill
-                };
-                tp.Controls.Add(tab);
-                tp.Text = ip;
-                tabControl.TabPages.Add(tp);
-            }
+        //public static ShellTab AddShellTab(MainForm mainForm, RemoteClient client, string ip)
+        //{
+        //    ShellTab tab = null;
+        //    var tabControl = mainForm.TabControlShell;
+        //    // 对于该控件的请求来自于创建该控件所在线程以外的线程
+        //    if (tabControl.InvokeRequired)
+        //    {
+        //        var control = new DelegateTabControl(delegate (TabControl _tb, RemoteClient _client, string _ip)
+        //        {
+        //            tab = new ShellTab(_client)
+        //            {
+        //                Dock = DockStyle.Fill
+        //            };
+        //            var tp = new TabPage {Text = _ip};
+        //            tp.Controls.Add(tab);
 
-            return tab;
-        }
+        //            mainForm.AddCachedTab(tp);
+        //            // 超过一定数量就不自动弹出来了
+        //            if (mainForm.cachedTabList.Count <= 1)
+        //            {
+        //                mainForm.ShowShellTab(_ip);
+        //            }
+        //        });
+        //        tabControl.Invoke(control, tabControl, client, ip);
+        //    }
+        //    else
+        //    {
+        //        var tp = new TabPage { Dock = DockStyle.Fill };
+        //        tab = new ShellTab(client)
+        //        {
+        //            Dock = DockStyle.Fill
+        //        };
+        //        tp.Controls.Add(tab);
+        //        tp.Text = ip;
+        //        tabControl.TabPages.Add(tp);
+        //    }
+
+        //    return tab;
+        //}
 
 
         //public static void RemoveShellTab(TabControl tabControl, RemoteClient client, string ip)

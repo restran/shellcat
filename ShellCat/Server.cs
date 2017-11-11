@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Windows.Forms;
+using static ShellCat.Utils;
 
 namespace ShellCat
 {
@@ -167,7 +168,7 @@ namespace ShellCat
         private readonly byte[] _buffer;
         private readonly TcpClient _client;
         private ClientInfo _clientInfo;
-        private readonly ShellTab _shellTab;
+        private readonly TabTextItem _shellTab;
         public readonly string _remoteEndPoint;
         private readonly Server _server;
 
@@ -182,9 +183,9 @@ namespace ShellCat
             // 打印连接到的客户端信息
             WriteLog($"Client Connected! {client.Client.LocalEndPoint} <-- {client.Client.RemoteEndPoint}");
             _remoteEndPoint = client.Client.RemoteEndPoint.ToString();
-            _shellTab = Utils.AddShellTab(_mainForm,
-                this, client.Client.RemoteEndPoint.ToString());
-            _shellTab.AppendText($"Client Connected {DateTime.Now.ToString()}\r\n");
+            string initMsg = $"Client Connected {DateTime.Now.ToString()}\r\n";
+            this._shellTab = _mainForm.AddShellTab(this, initMsg, client.Client.RemoteEndPoint.ToString());
+            //_shellTab.AppendText($"Client Connected {DateTime.Now.ToString()}\r\n");
 
             // 获得流
             try
@@ -238,7 +239,7 @@ namespace ShellCat
                 Dispose();
                 _shellTab.AppendText("\r\n++++++++CONNECTION LOST++++++++\r\n");
                 WriteLog($"Remote {_remoteEndPoint} lost connection");
-                _shellTab.ConnectionLost = true;
+                _shellTab.ConnectionLost();
                 Utils.RemoveIpListView(_mainForm.ListViewIp, _remoteEndPoint);
                 lock (_mainForm._lockObject)
                 {
@@ -315,7 +316,7 @@ namespace ShellCat
             {
                 if (!_client.Connected)
                 {
-                    _shellTab.ConnectionLost = true;
+                    _shellTab.ConnectionLost();
                     return;
                 }
 

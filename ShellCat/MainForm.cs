@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using static ShellCat.Utils;
 
 namespace ShellCat
 {
@@ -17,30 +18,50 @@ namespace ShellCat
         public Object _lockObject = new object();
         public bool _showingBatchCmdForm = false;
         private Thread _threadService;
-        public List<TabPage> CachedTabList = new List<TabPage>();
-
-        public void AddCachedTab(TabPage tp)
+        //public List<TabPage> cachedTabList = new List<TabPage>();
+        public List<TabTextItem> cachedTabTextList = new List<TabTextItem>();
+        public delegate void DelegateTabControl(TabControl tabControl, TabTextItem tabTextItem);
+        public TabTextItem AddShellTab(RemoteClient client, string initMsg, string ip)
         {
-            lock (CachedTabList)
+            var tab = new TabTextItem
             {
-                var found = CachedTabList.Any(tabPage => tp.Text.Equals(tabPage.Text));
+                title = ip,
+                client = client,
+                text = initMsg
+            };
+
+            this.AddCachedTab(tab);
+            // 超过一定数量就不自动弹出来了
+            if (this.cachedTabTextList.Count <= 1)
+            {
+                this.ShowShellTab(ip);
+            }
+
+            return tab;
+        }
+
+        public void AddCachedTab(TabTextItem tp)
+        {
+            lock (cachedTabTextList)
+            {
+                var found = cachedTabTextList.Any(tab => tp.title.Equals(tab.title));
 
                 if (found == false)
                 {
-                    CachedTabList.Add(tp);
+                    cachedTabTextList.Add(tp);
                 }
             }
         }
 
         public void RemoveCachedTab(string ip)
         {
-            lock (CachedTabList)
+            lock (cachedTabTextList)
             {
-                for (var i = 0; i < CachedTabList.Count; i++)
+                for (var i = 0; i < cachedTabTextList.Count; i++)
                 {
-                    if (CachedTabList[i].Text.Equals(ip))
+                    if (cachedTabTextList[i].title.Equals(ip))
                     {
-                        CachedTabList.RemoveAt(i);
+                        cachedTabTextList.RemoveAt(i);
                         break;
                     }
                 }
@@ -176,6 +197,41 @@ namespace ShellCat
             }
         }
 
+        public void AddToTabControl(TabTextItem tabText)
+        {
+            if (tabControl.InvokeRequired)
+            {
+                var control = new DelegateTabControl(delegate (TabControl _tb, TabTextItem _tab)
+                {
+                    var tp = new TabPage { Dock = DockStyle.Fill };
+                    var tab = new ShellTab(tabText.client)
+                    {
+                        Dock = DockStyle.Fill
+                    };
+                    tp.Controls.Add(tab);
+                    tp.Text = tabText.title;
+                    tab.AppendText(tabText.text);
+                    tabText.shellTab = tab;
+                    tabControl.TabPages.Add(tp);
+                    tabControl.SelectedIndex = tabControl.TabCount - 1;
+                });
+                tabControl.Invoke(control, tabControl, tabText);
+            }
+            else
+            {
+                var tp = new TabPage { Dock = DockStyle.Fill };
+                var tab = new ShellTab(tabText.client)
+                {
+                    Dock = DockStyle.Fill
+                };
+                tp.Controls.Add(tab);
+                tp.Text = tabText.title;
+                tab.AppendText(tabText.text);
+                tabText.shellTab = tab;
+                tabControl.TabPages.Add(tp);
+                tabControl.SelectedIndex = tabControl.TabCount - 1;
+            }
+        }
         public void ShowShellTab(string ip)
         {
             var found = false;
@@ -190,14 +246,14 @@ namespace ShellCat
 
             if (found == false)
             {
-                lock (CachedTabList)
+                lock (cachedTabTextList)
                 {
-                    foreach (var t in CachedTabList)
+                    foreach (var t in cachedTabTextList)
                     {
-                        if (ip.Equals(t.Text))
+                        if (ip.Equals(t.title))
                         {
-                            tabControl.TabPages.Add(t);
-                            tabControl.SelectedIndex = tabControl.TabCount - 1;
+                            AddToTabControl(t);
+                            break;
                         }
                     }
                 }
