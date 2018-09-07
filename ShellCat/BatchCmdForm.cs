@@ -13,6 +13,8 @@ namespace ShellCat
     {
         private int _oldLength = 0;
         public MainForm _mainForm;
+        // richTextBox 最大行数
+        private int _rtbMaxLines = 3000;
 
         public BatchCmdForm(MainForm mainForm)
         {
@@ -110,6 +112,8 @@ namespace ShellCat
                     // 设置插入点的字体
                     tb.SelectionFont = new Font(tb.Font.FontFamily, 10.5f);
                     tb.AppendText(cnt);
+                    // 控制最大行数
+                    Utils.RichTextBoxMaxLineControl(tb);
                     tb.ScrollToCaret(); //让滚动条拉到最底处   
                 });
                 rtbOutput.Invoke(rtbSet, rtbOutput, content);
@@ -119,6 +123,8 @@ namespace ShellCat
                 // 设置插入点的字体
                 rtbOutput.SelectionFont = new Font(rtbOutput.Font.FontFamily, 10.5f);
                 rtbOutput.AppendText(content);
+                // 控制最大行数
+                Utils.RichTextBoxMaxLineControl(rtbOutput);
                 rtbOutput.ScrollToCaret(); //让滚动条拉到最底处  
             }
         }
@@ -130,7 +136,7 @@ namespace ShellCat
         /// <param name="e"></param>
         private void rtbInput_TextChanged(object sender, EventArgs e)
         {
-            if (rtbInput.TextLength < _oldLength)
+            if (rtbInput.TextLength < _oldLength || rtbInput.SelectionStart < rtbInput.TextLength)
             {
                 rtbInput.Undo();
             }
@@ -149,17 +155,24 @@ namespace ShellCat
             if (e.KeyCode == Keys.Enter)
             {
                 var cmd = rtbInput.Text.Substring(_oldLength);
-                _oldLength = rtbInput.TextLength;
-                for (var i = 0; i < lvwIP.Items.Count; i++)
+                if (cmd.Trim().Equals(""))
                 {
-                    if (lvwIP.Items[i].Checked)
+                    rtbInput.AppendText("\n$ ");
+                }
+                else
+                {
+                    for (var i = 0; i < lvwIP.Items.Count; i++)
                     {
-                        var remote = lvwIP.Items[i].SubItems[1].Text;
-                        _mainForm._server.SendMessageToClient(remote, cmd);
+                        if (lvwIP.Items[i].Checked)
+                        {
+                            var remote = lvwIP.Items[i].SubItems[1].Text;
+                            _mainForm._server.SendMessageToClient(remote, cmd);
+                        }
                     }
+
+                    rtbInput.AppendText("$ ");
                 }
 
-                rtbInput.AppendText("$ ");
                 _oldLength = rtbInput.TextLength;
             }
         }

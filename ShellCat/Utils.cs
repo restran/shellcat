@@ -49,6 +49,8 @@ namespace ShellCat
                 var rtbSet = new DelegateRichTextBox(delegate(RichTextBox tb, string cnt)
                 {
                     tb.AppendText(cnt + "\r\n");
+                    // 控制最大行数
+                    Utils.RichTextBoxMaxLineControl(tb);
                     tb.ScrollToCaret(); //让滚动条拉到最底处   
                 });
                 textBox.Invoke(rtbSet, textBox, content);
@@ -56,6 +58,8 @@ namespace ShellCat
             else
             {
                 textBox.AppendText(content + "\r\n");
+                // 控制最大行数
+                Utils.RichTextBoxMaxLineControl(textBox);
                 textBox.ScrollToCaret(); //让滚动条拉到最底处   
             }
         }
@@ -125,5 +129,24 @@ namespace ShellCat
         private delegate void DelegateIpListView(ListView lvw, string ip);
 
         private delegate void DelegateTabControl(TabControl tabControl, RemoteClient client, string ip);
+
+        /**
+         * 控制行数，避免太多
+         **/
+        public static void RichTextBoxMaxLineControl(RichTextBox tb)
+        {
+            int _rtbMaxLines = 3000;
+            if (tb.Lines.Length > _rtbMaxLines)
+            {
+                int moreLines = tb.Lines.Length - _rtbMaxLines;
+                string[] lines = tb.Lines;
+                Array.Copy(lines, moreLines, lines, 0, _rtbMaxLines);
+                Array.Resize(ref lines, _rtbMaxLines);
+                tb.Lines = lines;
+                tb.SelectionStart = tb.TextLength;
+                tb.Focus();
+                tb.ScrollToCaret(); //让滚动条拉到最底处  
+            }
+        }
     }
 }

@@ -70,6 +70,7 @@
             this.rtbOutput.Location = new System.Drawing.Point(0, 0);
             this.rtbOutput.Margin = new System.Windows.Forms.Padding(0);
             this.rtbOutput.Name = "rtbOutput";
+            this.rtbOutput.ReadOnly = true;
             this.rtbOutput.Size = new System.Drawing.Size(551, 235);
             this.rtbOutput.TabIndex = 2;
             this.rtbOutput.Text = "";

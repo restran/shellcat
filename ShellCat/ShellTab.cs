@@ -48,6 +48,8 @@ namespace ShellCat
                     // 设置插入点的字体
                     tb.SelectionFont = new Font(tb.Font.FontFamily, 10.5f);
                     tb.AppendText(cnt);
+                    // 控制最大行数
+                    Utils.RichTextBoxMaxLineControl(tb);
                     tb.ScrollToCaret(); //让滚动条拉到最底处   
                     _oldLength = tb.TextLength; // 获取richtextbox中已有内容长度
                 });
@@ -58,6 +60,8 @@ namespace ShellCat
                 // 设置插入点的字体
                 RtbShell.SelectionFont = new Font(RtbShell.Font.FontFamily, 10.5f);
                 RtbShell.AppendText(content);
+                // 控制最大行数
+                Utils.RichTextBoxMaxLineControl(RtbShell);
                 RtbShell.ScrollToCaret(); //让滚动条拉到最底处  
                 _oldLength = RtbShell.TextLength; // 获取richtextbox中已有内容长度 
             }
@@ -72,7 +76,7 @@ namespace ShellCat
         /// <param name="e"></param>
         private void RtbShell_TextChanged(object sender, EventArgs e)
         {
-            if (RtbShell.TextLength < _oldLength)
+            if (RtbShell.TextLength < _oldLength || RtbShell.SelectionStart < RtbShell.TextLength)
             {
                 RtbShell.Undo();
             }
@@ -85,8 +89,16 @@ namespace ShellCat
                 if (!ConnectionLost)
                 {
                     var cmd = RtbShell.Text.Substring(_oldLength);
-                    _oldLength = RtbShell.TextLength;
-                    _client.SendMessage(cmd);
+                    if (cmd.Trim().Equals(""))
+                    {
+                        RtbShell.AppendText("\n$ ");
+                        _oldLength = RtbShell.TextLength; // 获取richtextbox中已有内容长度 
+                    } else
+                    {
+                        _oldLength = RtbShell.TextLength;
+                        _client.SendMessage(cmd);
+                    }
+
                 }
             }
         }
